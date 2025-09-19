@@ -16,6 +16,15 @@ struct Polygon
 {
     std::vector<SDL_Point> points;
     Color color;
+
+    void toString() {
+        for(int i = 0; i < this->points.size(); i++) {
+            std::cout << "Ponto " << i << std::endl;
+            std::cout << this->points[i].x << std::endl;
+            std::cout << this->points[i].y << std::endl;
+            std::cout << std::endl;
+        }
+    }
 };
 
 // Verificando se ponto está em um segmento
@@ -94,6 +103,7 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     bool draw = false;
     bool click = false;
+    bool test = false;
     
     std::vector<Polygon> polygons;
 
@@ -118,22 +128,32 @@ int main(int argc, char* argv[]) {
                     case SDLK_d:
                         draw = true;
                         break;
+                    case SDLK_t:
+                        test = true;
+                        break;
                 }
             }
         }
 
         if(draw == true) {
-            // Limpa a tela
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
-            SDL_RenderPresent(renderer);
-            // Desenha as formas
-            for(auto & polygon : polygons) { // loop para desenhar as formas na tela
+            
+            for(auto & polygon : polygons) {
                 SDL_SetRenderDrawColor(renderer, polygon.color.red, polygon.color.green, polygon.color.blue, 255);
                 SDL_RenderDrawLines(renderer, polygon.points.data(), polygon.points.size());
             }
+            
             SDL_RenderPresent(renderer);
             draw = false;
+        }
+
+        if(test == true) {
+            for(int i = 0; i < polygons.size(); i++) {
+                std::cout << "Shape: " << i << std::endl;
+                polygons[i].toString();
+            }
+            test = false;
         }
 
         // quando eu clico na tela preciso verificar se foi em algum polígono
@@ -175,9 +195,14 @@ int main(int argc, char* argv[]) {
                 }
                 case 2:
                     int selectedPolygon = rayCasting(polygons, xPosition, yPosition);
-                    for(int i = 0; i < polygons[selectedPolygon].points.size(); i++) { // deixar a pessoa selecionar os pontos
-                        int pointX = polygons[selectedPolygon].points[i].x;
-                        int pointY = polygons[selectedPolygon].points[i].y;
+                    while(selectedPolygon == -1) {
+                        std::cout << "Por favor selecione uma forma" << std::endl;
+                        click = false;
+                    }
+                    Polygon & poly = polygons[selectedPolygon];
+                    for(int i = 0; i < poly.points.size() - 1; i++) { // deixar a pessoa selecionar os pontos
+                        int pointX = poly.points[i].x;
+                        int pointY = poly.points[i].y;
                         int newX = 0;
                         int newY = 0;
                         bool change;
@@ -185,15 +210,13 @@ int main(int argc, char* argv[]) {
                         std::cout << pointX << " " << pointY << std::endl;
                         std::cin >> newX; 
                         std::cin >> newY;
-                        std::cout << newX << std::endl;
-                        std::cout << newY << std::endl;
-                        polygons[selectedPolygon].points[i].x = newX;
-                        polygons[selectedPolygon].points[i].y = newY;
+                        poly.points[i].x = newX;
+                        poly.points[i].y = newY;
                     }
+                    poly.points.pop_back();
+                    poly.points.push_back(poly.points[0]);
                     break;
             }
-            
-            std::cout << "Clique D" << std::endl;
             click = false;
         }
     }
