@@ -25,42 +25,52 @@ struct Polygon
     std::vector<SDL_Point> points;
 };
 
-bool pointIntersects(const SDL_Point & a, const SDL_Point & b, Sint32 x, Sint32 y) {
-    SDL_Point p;
-    p.x = x;
-    p.y = y;
-    bool cross_product = (p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x);
-    if (abs(cross_product) > 1e-9) { 
+// Verificando se ponto está em um segmento
+bool pointOnSegment(const SDL_Point &a, const SDL_Point &b, Sint32 x, Sint32 y) {
+    SDL_Point p = {x, y};
+    
+    // Verificando colinearidade
+    int cross = (p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x);
+    if (abs(cross) > 1e-9) {
         return false;
     }
-    bool within_x = (p.x >= std::min(a.x, b.x) && p.x <= std::max(a.x, b.x));
-    bool within_y = (p.y >= std::min(a.y, b.y) && p.y <= std::max(a.y, b.y));
-
+    
+    bool within_x = (x >= std::min(a.x, b.x) && x <= std::max(a.x, b.x));
+    bool within_y = (y >= std::min(a.y, b.y) && y <= std::max(a.y, b.y));
+    
     return within_x && within_y;
 }
 
-// algoritmo de ray casting para verificar se onde clicamos está dentro do polígono
-int rayCasting(std::vector<Polygon> & polygons, Sint32 x, Sint32 y ) {
-    for(size_t i = 0; i < polygons.size(); i++) {
-        int count = 0;
-        size_t num_points = polygons[i].points.size(); // numero de pontos do meu polígono
+// Algoritmo de ray casting
+int rayCasting(std::vector<Polygon> &polygons, Sint32 x, Sint32 y) {
+    for (int i = 0; i < polygons.size(); i++) {
+        const auto& poly = polygons[i];
+        int num_points = poly.points.size();
         
-        if (num_points < 2) { // caso que é apenas um ponto
-            continue;
-        }
+        if (num_points < 3) continue; // caso base tem que ser um polígono
         
-        for(size_t j = 0; j < num_points; j++) {
-            size_t next_j = (j + 1) % num_points; // 
+        bool inside = false;
+        
+        for (int j = 0, k = num_points - 1; j < num_points; k = j++) {
+            const SDL_Point& p1 = poly.points[j];
+            const SDL_Point& p2 = poly.points[k];
             
-            if(pointIntersects(polygons[i].points[j], polygons[i].points[next_j], x, y)) {
-                count++;
+            // verificando se ponto está na borda
+            if (pointOnSegment(p1, p2, x, y)) {
+                return i;
+            }
+            
+            if (((p1.y > y) != (p2.y > y)) && 
+                (x < (p2.x - p1.x) * (y - p1.y) / (p2.y - p1.y) + p1.x)) {
+                inside = !inside;
             }
         }
-        if(count % 2 != 0) {
-            return (int)i;
+        
+        if (inside) {
+            return i;
         }
     }
-    return -1; // Note: This returns a large positive number since size_t is unsigned
+    return -1;
 }
 int main(int argc, char* argv[]) {
     srand(static_cast<unsigned int>(time(0)));
