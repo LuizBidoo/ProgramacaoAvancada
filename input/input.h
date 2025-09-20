@@ -5,7 +5,7 @@
 #include <vector>
 #include "../polygons/polygon.h"
 
-bool processEvents(SDL_Event &event, bool &quit, bool &draw, bool &test, bool &click, 
-                  Sint32 &xPosition, Sint32 &yPosition, std::vector<Polygon> &polygons);
+bool processEvents(SDL_Event &event, bool &quit, bool &creatingPolygon, bool &done, bool &test, bool &click, 
+                  Sint32 &xPosition, Sint32 &yPosition, std::vector<SDL_Point> &currentPolygonPoints, Color &currentPolygonColor);
 
 #endif
