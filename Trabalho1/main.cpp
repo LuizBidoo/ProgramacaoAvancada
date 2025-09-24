@@ -233,7 +233,6 @@ int main()
         Vector2 mousePos = GetMousePosition();
         logMouseMovement(mousePos.x, mousePos.y);
 
-        // CORREÇÃO: Usar IsKeyPressed() em vez de IsKeyDown()
         if(IsKeyPressed(KEY_C)) {
             std::cout << "Criando Circulo" << std::endl;
             std::cout << "Digite x, y, raio: ";
@@ -370,7 +369,6 @@ int main()
                     shapes[selectedShape].color.b = (unsigned char)b;
                 }
             } else {
-                // CORREÇÃO: Este else deve estar aqui, não dentro do if
                 logClick(mousePos.x, mousePos.y, -1, "None");
                 std::cout << "Nenhum shape selecionado." << std::endl;
             }
