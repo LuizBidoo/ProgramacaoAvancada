@@ -39,9 +39,9 @@ struct ShapeInfo {
     int width = 0;
     int height = 0;
     float radius = 0;
-    Vector2 v1 = {0,0};
-    Vector2 v2 = {0,0};
-    Vector2 v3 = {0,0};
+    Vector2 v1 = Vector2();
+    Vector2 v2 = Vector2();
+    Vector2 v3 = Vector2();
     std::string name;
 
     std::string getTypeString() {
@@ -291,6 +291,13 @@ int main()
             shape.x2 = x2;
             shape.y2 = y2;
             shapes.push_back(shape);
+        } else if(IsKeyPressed(KEY_D)) {
+            for(ShapeInfo shape : shapes) {
+                std::cout << shape.getTypeString() << std::endl;
+                std::cout << shape.v1.x << " " << shape.v1.y << std::endl;
+                std::cout << shape.v2.x << " " << shape.v2.y << std::endl;
+                std::cout << shape.v3.x << " " << shape.v3.y << std::endl;
+            }
         }
         
         if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -387,7 +394,7 @@ int main()
                     DrawRectangle(shape.x1, shape.y1, shape.width, shape.height, shape.color);
                     break;
                 case TriangleShape:
-                    DrawTriangle(shape.v1, shape.v2, shape.v3, shape.color);
+                    DrawTriangle(shape.v1, shape.v3, shape.v2, shape.color);
                     break;
                 case Line:
                     DrawLine(shape.x1, shape.y1, shape.x2, shape.y2, shape.color);
