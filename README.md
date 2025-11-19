@@ -9,3 +9,4 @@ Aluno: Luiz Bido
 | 3 | 18/10, 19:45 | [Trabalho 3](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho3) | Sim |
 | 4 | 26/10, 17:48 | [Trabalho 4](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho4) | Não (Faltou o gráfico de complexidade) |
 | 5 | 12/11, 10:36 | [Trabalho 5](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho5) | Sim |
+| 6 | 18/11, 10:06 | [Trabalho 6](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho6) | Sim |
