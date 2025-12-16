@@ -1,0 +1,312 @@
+#include "raylib.h"
+#include "Grid.h"
+#include "AgentManager.h"
+#include "Metrics.h"
+#include "NavigationFactory.h"
+#include "BasicGridFactory.h"
+#include "AStarPathfinderFactory.h"
+#include "BasicAgentFactory.h"
+#include "RandomObstacleFactory.h"
+#include "RectangularGridAdapter.h"
+#include "HexagonalGridAdapter.h"
+#include "SpeedBoostDecorator.h"
+#include "SmartPathfindingDecorator.h"
+#include "BasicAgentBehavior.h"
+#include "GridInitializationHandler.h"
+#include "AgentManagerInitializationHandler.h"
+#include <memory>
+#include <unordered_map>
+
+void RunPerformanceTests(std::unique_ptr<NavigationFactory>& factory) {
+    //printf("Iniciando testes de performance...\n");
+    
+    std::vector<std::pair<int, int>> gridSizes = {{10, 10}, {20, 20}, {40, 40}};
+    std::vector<int> agentCounts = {1, 5, 10, 20};
+    
+    for (auto& gridSize : gridSizes) {
+        int width = gridSize.first;
+        int height = gridSize.second;
+        float cellSize = 20.0f;
+        
+        auto grid = factory->CreateGrid(width, height, cellSize);
+        auto agentManager = factory->CreateAgentManager(grid.get());
+        
+        factory->CreateObstacles(*grid, (width * height) / 8);
+        
+        for (int agents : agentCounts) {
+            //printf("Testando: Grid %dx%d com %d agentes\n", width, height, agents);
+            
+            for (int i = 0; i < agents; i++) {
+                Vector2 start, target;
+                
+                do {
+                    start = {(float)GetRandomValue(0, width-1), 
+                            (float)GetRandomValue(0, height-1)};
+                } while (!grid->IsWalkable((int)start.x, (int)start.y));
+                
+                do {
+                    target = {(float)GetRandomValue(0, width-1), 
+                             (float)GetRandomValue(0, height-1)};
+                } while (!grid->IsWalkable((int)target.x, (int)target.y) || 
+                        (start.x == target.x && start.y == target.y));
+                
+                agentManager->AddAgent(start, target);
+            }
+            
+            for (int frame = 0; frame < 60; frame++) {
+                agentManager->UpdateAll(1.0f/60.0f);
+            }
+        }
+    }
+    
+    Metrics::SaveToCSV("performance_data.csv");
+    //printf("Testes concluídos! Dados salvos em performance_data.csv!\n");
+}
+
+#include "raylib.h"
+#include "Grid.h"
+#include "AgentManager.h"
+#include "Metrics.h"
+#include "NavigationFactory.h"
+#include "BasicGridFactory.h"
+#include "AStarPathfinderFactory.h"
+#include "BasicAgentFactory.h"
+#include "RandomObstacleFactory.h"
+#include "RectangularGridAdapter.h"
+#include "HexagonalGridAdapter.h"
+#include "SpeedBoostDecorator.h"
+#include "SmartPathfindingDecorator.h"
+#include "BasicAgentBehavior.h"
+
+
+int main() {
+    const int screenWidth = 800;
+    const int screenHeight = 600;
+    const float cellSize = 60.0f;
+    const int numCols = screenWidth / cellSize;
+    const int numRows = screenHeight / cellSize;
+
+    auto gridInitializer = std::make_unique<GridInitializationHandler>(numCols, numRows, cellSize);
+    auto agentManagerInitializer = std::make_unique<AgentManagerInitializationHandler>();
+
+    gridInitializer->SetNext(std::move(agentManagerInitializer));
+    gridInitializer->Handle();
+
+    auto& grid = Grid::GetInstance();
+    auto& agentManager = AgentManager::GetInstance();
+
+    Vector2 spawnPos = {-1, -1};
+    Vector2 targetPos = {-1, -1};
+    bool placingSpawn = false;
+    bool placingTarget = false;
+
+    std::unordered_map<int, int> collMap;
+    std::unordered_map<int, int> broadCollMap;    
+
+    std::unique_ptr<IGridAdapter> gridAdapter = std::make_unique<RectangularGridAdapter>(grid);
+    bool useHexagonalGrid = false;
+    bool useSmartAgents = false;
+    bool useFastAgents = false;
+
+    InitWindow(screenWidth, screenHeight, "Grid Navigation with Advanced Patterns");
+
+    SetTargetFPS(60);
+
+    while (!WindowShouldClose()) {
+        Vector2 mousePos = GetMousePosition();
+        int gridX = mousePos.x / cellSize;
+        int gridY = mousePos.y / cellSize;
+
+        if (IsKeyPressed(KEY_H)) {
+            useHexagonalGrid = !useHexagonalGrid;
+            if (useHexagonalGrid) {
+                gridAdapter = std::make_unique<HexagonalGridAdapter>(grid);
+                //printf("Modo hexagonal ativado!\n");
+            } else {
+                gridAdapter = std::make_unique<RectangularGridAdapter>(grid);
+                //printf("Modo retangular ativado!\n");
+            }
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            useFastAgents = !useFastAgents;
+            //printf("Agentes rápidos: %s\n", useFastAgents ? "ATIVADO" : "DESATIVADO");
+        }
+
+        if (IsKeyPressed(KEY_I)) {
+            useSmartAgents = !useSmartAgents;
+            //printf("Agentes inteligentes: %s\n", useSmartAgents ? "ATIVADO" : "DESATIVADO");
+        }
+
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            gridAdapter->SetOccupied(gridX, gridY, true);
+        }
+        
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            if (placingSpawn && gridAdapter->IsWalkable(gridX, gridY)) {
+                spawnPos = {(float)gridX, (float)gridY};
+                placingSpawn = false;
+                placingTarget = false;
+            }
+            else if (placingTarget && gridAdapter->IsWalkable(gridX, gridY)) {
+                targetPos = {(float)gridX, (float)gridY};
+                placingTarget = false;
+                placingSpawn = false;
+            }
+            else {
+                gridAdapter->SetOccupied(gridX, gridY, false);
+            }
+        }
+
+        if (IsKeyPressed(KEY_S)) {
+            placingSpawn = true;
+            placingTarget = false;
+        }
+        if (IsKeyPressed(KEY_T)) {
+            placingTarget = true;
+            placingSpawn = false;
+        }
+        
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            placingSpawn = false;
+            placingTarget = false;
+        }
+
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (spawnPos.x >= 0 && spawnPos.y >= 0 && targetPos.x >= 0 && targetPos.y >= 0 &&
+                gridAdapter->IsWalkable((int)spawnPos.x, (int)spawnPos.y) && 
+                gridAdapter->IsWalkable((int)targetPos.x, (int)targetPos.y)) {
+                
+                std::unique_ptr<IAgentBehavior> behavior = std::make_unique<BasicAgentBehavior>();
+                
+                if (useSmartAgents) {
+                    behavior = std::make_unique<SmartPathfindingDecorator>(std::move(behavior));
+                }
+                
+                if (useFastAgents) {
+                    behavior = std::make_unique<SpeedBoostDecorator>(std::move(behavior), 2.0f);
+                }
+                
+                agentManager.AddAgentWithBehavior(spawnPos, targetPos, std::move(behavior));
+                spawnPos = {-1, -1};
+                targetPos = {-1, -1};
+            }
+        }
+
+        if (IsKeyPressed(KEY_R)) {
+            for (int i = 0; i < 5; i++) {
+                Vector2 start, target;
+                
+                do {
+                    start = {(float)GetRandomValue(0, gridAdapter->GetWidth() - 1), 
+                            (float)GetRandomValue(0, gridAdapter->GetHeight() - 1)};
+                } while (!gridAdapter->IsWalkable((int)start.x, (int)start.y));
+                
+                do {
+                    target = {(float)GetRandomValue(0, gridAdapter->GetWidth() - 1), 
+                             (float)GetRandomValue(0, gridAdapter->GetHeight() - 1)};
+                } while (!gridAdapter->IsWalkable((int)target.x, (int)target.y) || 
+                        (start.x == target.x && start.y == target.y));
+                
+                std::unique_ptr<IAgentBehavior> behavior = std::make_unique<BasicAgentBehavior>();
+                
+                if (useSmartAgents) {
+                    behavior = std::make_unique<SmartPathfindingDecorator>(std::move(behavior));
+                }
+                
+                if (useFastAgents) {
+                    behavior = std::make_unique<SpeedBoostDecorator>(std::move(behavior), 2.0f);
+                }
+                
+                agentManager.AddAgentWithBehavior(start, target, std::move(behavior));
+            }
+        }
+
+        if (IsKeyPressed(KEY_P)) {
+            Metrics::Clear();
+            auto navigationFactory = std::make_unique<NavigationFactory>(
+                std::make_unique<BasicGridFactory>(),
+                std::make_unique<AStarPathfinderFactory>(),
+                std::make_unique<BasicAgentFactory>(),
+                std::make_unique<RandomObstacleFactory>()
+            );
+            RunPerformanceTests(navigationFactory);
+        }
+
+        if (IsKeyPressed(KEY_M)) {
+            Metrics::SaveToCSV("manual_performance_data.csv");
+            //printf("Métricas salvas manualmente em manual_performance_data.csv!\n");
+        }
+
+        if (IsKeyPressed(KEY_C)) {
+            AgentManager::DestroyInstance();
+            AgentManager::CreateInstance(&grid); 
+            //printf("Todos os agentes removidos!\n");
+        }
+
+        if (IsKeyPressed(KEY_D)) {
+            if (agentManager.GetAgentCount() > 0) {
+                int agentIndex = GetRandomValue(0, agentManager.GetAgentCount() - 1);
+                agentManager.GetAgents()[agentIndex].TakeDamage(101);
+            }
+        }
+
+        if (IsKeyPressed(KEY_U)) {
+            agentManager.GetCommandProcessor().UndoLastCommand();
+        }
+
+        agentManager.UpdateAll(GetFrameTime());
+
+        collMap.clear();
+        broadCollMap.clear();
+        agentManager.CheckCollision(collMap, broadCollMap);
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+            
+            gridAdapter->Draw();
+            agentManager.DrawAll(grid);
+                       
+            
+            if (spawnPos.x >= 0 && spawnPos.y >= 0) {
+                DrawRectangle(spawnPos.x * cellSize, spawnPos.y * cellSize, cellSize, cellSize, BLUE);
+                DrawText("SPAWN", spawnPos.x * cellSize, spawnPos.y * cellSize - 15, 10, BLUE);
+            }
+            if (targetPos.x >= 0 && targetPos.y >= 0) {
+                DrawRectangle(targetPos.x * cellSize, targetPos.y * cellSize, cellSize, cellSize, ORANGE);
+                DrawText("TARGET", targetPos.x * cellSize, targetPos.y * cellSize - 15, 10, ORANGE);
+            }
+
+            DrawText("Left click: Place obstacle", 10, 10, 20, DARKGRAY);
+            DrawText("Right click: Remove obstacle / Place spawn/target", 10, 35, 20, DARKGRAY);
+            DrawText("S: Set spawn mode | T: Set target mode", 10, 60, 20, DARKGRAY);
+            DrawText("ENTER: Create agent | R: 5 random agents", 10, 85, 20, DARKGRAY);
+            DrawText("H: Toggle Hexagonal/Retangular grid", 10, 110, 20, DARKGRAY);
+            DrawText("F: Toggle Fast agents | I: Toggle Smart agents", 10, 135, 20, DARKGRAY);
+            DrawText("P: Run performance tests | M: Save metrics", 10, 160, 20, DARKGRAY);
+            DrawText("C: Clear all agents | ESC: Cancel placement", 10, 185, 20, DARKGRAY);
+            DrawText(TextFormat("Agents: %d", agentManager.GetAgentCount()), 10, 210, 20, DARKGRAY);
+            
+            DrawText(TextFormat("Grid: %s", useHexagonalGrid ? "HEXAGONAL" : "RETANGULAR"), 
+                    10, 235, 20, useHexagonalGrid ? BLUE : DARKGRAY);
+            DrawText(TextFormat("Fast Agents: %s", useFastAgents ? "ON" : "OFF"), 
+                    10, 260, 20, useFastAgents ? GREEN : DARKGRAY);
+            DrawText(TextFormat("Smart Agents: %s", useSmartAgents ? "ON" : "OFF"), 
+                    10, 285, 20, useSmartAgents ? PURPLE : DARKGRAY);
+            
+            if (placingSpawn) {
+                DrawText("MODE: Placing SPAWN (Right click to place)", 10, 310, 20, BLUE);
+            } else if (placingTarget) {
+                DrawText("MODE: Placing TARGET (Right click to place)", 10, 310, 20, ORANGE);
+            }
+            
+        EndDrawing();
+    }
+
+    AgentManager::DestroyInstance();
+    Grid::DestroyInstance();
+
+    CloseWindow();
+
+    return 0;
+}
