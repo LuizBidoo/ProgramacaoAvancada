@@ -11,3 +11,5 @@ Aluno: Luiz Bido
 | 5 | 12/11, 22:36 | [Trabalho 5](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho5) | Sim |
 | 6 | 18/11, 22:06 | [Trabalho 6](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho6) | Sim |
 | 7 | 25/11, 20:40 | [Trabalho 7](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho7) | Sim |
+| 8 | 16/12, 18:23 | [Trabalho 8](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho8) | Não (Atrasado) |
+| 9 | 16/12, 20:34 | [Trabalho 9](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho9) | Sim |
