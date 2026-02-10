@@ -13,3 +13,4 @@ Aluno: Luiz Bido
 | 7 | 25/11, 20:40 | [Trabalho 7](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho7) | Sim |
 | 8 | 16/12, 18:23 | [Trabalho 8](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho8) | Não (Atrasado) |
 | 9 | 16/12, 20:34 | [Trabalho 9](https://github.com/LuizBidoo/ProgramacaoAvancada/tree/main/Trabalho9) | Sim |
+| 10 || | Não |
